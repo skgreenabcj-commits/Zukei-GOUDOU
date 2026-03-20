@@ -4,7 +4,7 @@ on:
   schedule:
     # 日本時間の毎週月曜日 午前7:00 に実行する設定（UTC時間で指定）
     - cron: '0 22 * * 0'
-  workflow_dispatch: # 手動で「Run workflow」ボタンを押して実行することも可能
+  workflow_dispatch:
 
 jobs:
   build_and_run:
@@ -28,6 +28,8 @@ jobs:
       env:
         GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
         GMAIL_APP_PASS: ${{ secrets.GMAIL_APP_PASS }}
-        GCP_SERVICE_ACCOUNT_JSON: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+        GCP_CLIENT_ID: ${{ secrets.GCP_CLIENT_ID }}
+        GCP_CLIENT_SECRET: ${{ secrets.GCP_CLIENT_SECRET }}
+        GCP_REFRESH_TOKEN: ${{ secrets.GCP_REFRESH_TOKEN }}
       run: |
         python main.py
