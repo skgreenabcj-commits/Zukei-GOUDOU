@@ -47,7 +47,6 @@ SHAPES = {
     "trapezoid":trapezoid, "right_trap":right_trap,
     "parallelogram":parallelogram, "rhombus":rhombus, "ellipse":ellipse
 }
-ADVANCED_TYPES = {"trapezoid","right_trap","parallelogram","rhombus","ellipse","ngon"}
 
 # ──────────────────────────────────
 # 2. ユーティリティ
@@ -92,9 +91,20 @@ def visible_rotation(poly:np.ndarray, rnd:random.Random)->float:
 def generate_one(page:int, save_dir:pathlib.Path):
     rnd = random.Random()
     shape_keys = list(SHAPES.keys()) + ["ngon"]
+    
+    # ★追加：出題頻度を上げたい「重要図形」のリスト
+    PRIORITY_SHAPES = {"right_trap", "trapezoid", "parallelogram", "rhombus", "ngon"}
+    
+    # ★追加：各図形の出現確率の「重み」を設定
+    # 重要図形は重みを3にし、それぞれが全体の約30%（3回に1回）の確率で登場するように調整
+    weights = [3.0 if k in PRIORITY_SHAPES else 1.0 for k in shape_keys]
 
     while True:
-        k1, k2 = rnd.sample(shape_keys, 2)
+        # 重み付け抽選で2つの図形を選ぶ（同じ図形が選ばれた場合は引き直し）
+        k1, k2 = rnd.choices(shape_keys, weights=weights, k=2)
+        if k1 == k2:
+            continue
+            
         def make_shape(k):
             if k == "ngon":
                 n = rnd.choice([5,6,7,8])
@@ -102,8 +112,10 @@ def generate_one(page:int, save_dir:pathlib.Path):
             elif k == "ellipse":
                 return (k, None, ellipse(rx=rnd.uniform(1.4,1.8), ry=rnd.uniform(0.9,1.2)) * BASE_SCALE)
             return (k, None, SHAPES[k]() * BASE_SCALE)
+            
         s1, s2 = make_shape(k1), make_shape(k2)
-        if (k1 in ADVANCED_TYPES or k2 in ADVANCED_TYPES) and not is_congruent(s1[2], s2[2]):
+        
+        if not is_congruent(s1[2], s2[2]):
             specified = [s1, s2]
             break
 
@@ -113,7 +125,7 @@ def generate_one(page:int, save_dir:pathlib.Path):
     for s_type, aux, base in specified:
         base_max_dim = max(np.ptp(base, axis=0))
         if s_type == "ngon":
-            # ★修正点：引掛けは必ず「5〜8角形」の中から「正解と違う角数」を2つ選び、最優先(先頭)で追加する
+            # 引掛けは必ず「5〜8角形」の中から「正解と違う角数」を2つ選び、最優先(先頭)で追加する
             available_ns = [n for n in [5, 6, 7, 8] if n != aux]
             
             diff_ns1 = rnd.choice(available_ns)
@@ -296,7 +308,7 @@ Google Driveのフォルダ「{folder_name}」に保存されています。
 # ──────────────────────────────────
 # 6. メイン（一括処理）
 # ──────────────────────────────────
-def main(n_pages:int=10): # 10枚生成に完全固定
+def main(n_pages:int=10):
     out_dir = pathlib.Path.cwd() / "temp_worksheets"
     if out_dir.exists():
         shutil.rmtree(out_dir)
