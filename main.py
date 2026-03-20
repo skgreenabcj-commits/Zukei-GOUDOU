@@ -12,7 +12,7 @@ import matplotlib.patches as mpatches
 # --- 自動化用ライブラリ ---
 import smtplib
 from email.mime.text import MIMEText
-from google.oauth2.credentials import Credentials # ★変更点
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
@@ -207,7 +207,7 @@ def generate_one(page:int, save_dir:pathlib.Path):
     plt.close(fig)
 
 # ──────────────────────────────────
-# 4. 追加機能：Google Drive API アップロード（★OAuthリフレッシュトークン対応）
+# 4. 追加機能：Google Drive API アップロード（GitHub Actions対応版）
 # ──────────────────────────────────
 def get_drive_service():
     """環境変数からOAuth情報を読み込み、Drive APIサービスを返す"""
@@ -287,7 +287,7 @@ Google Driveのフォルダ「{folder_name}」に保存されています。
 # ──────────────────────────────────
 # 6. メイン（一括処理）
 # ──────────────────────────────────
-def main(n_pages:int=3):
+def main(n_pages:int=10): # ★ここをColabと同じ「10枚」に戻しました！
     out_dir = pathlib.Path.cwd() / "temp_worksheets"
     if out_dir.exists():
         shutil.rmtree(out_dir)
@@ -306,4 +306,4 @@ def main(n_pages:int=3):
     print("✨ すべての自動化プロセスが完了しました！")
 
 if __name__=="__main__":
-    main(10) # デフォルトで3枚生成
+    main(10) # ★ここもColabと同じ「10枚」に戻しました！
