@@ -3,7 +3,7 @@
 【GitHub Actions自動化版】難易度アップ版：4歳児向け〈合同図形さがし〉プリント
 """
 
-import os, json, random, math, pathlib, datetime, shutil
+import os, random, math, pathlib, datetime, shutil
 from typing import List, Tuple
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,7 +12,7 @@ import matplotlib.patches as mpatches
 # --- 自動化用ライブラリ ---
 import smtplib
 from email.mime.text import MIMEText
-from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials # ★変更点
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
@@ -207,19 +207,25 @@ def generate_one(page:int, save_dir:pathlib.Path):
     plt.close(fig)
 
 # ──────────────────────────────────
-# 4. 追加機能：Google Drive API アップロード（サービスアカウント対応）
+# 4. 追加機能：Google Drive API アップロード（★OAuthリフレッシュトークン対応）
 # ──────────────────────────────────
 def get_drive_service():
-    """環境変数からサービスアカウント情報を読み込み、Drive APIサービスを返す"""
-    creds_json = os.environ.get('GCP_SERVICE_ACCOUNT_JSON')
-    if not creds_json:
-        raise ValueError("環境変数 'GCP_SERVICE_ACCOUNT_JSON' が設定されていません。")
+    """環境変数からOAuth情報を読み込み、Drive APIサービスを返す"""
+    client_id = os.environ.get('GCP_CLIENT_ID')
+    client_secret = os.environ.get('GCP_CLIENT_SECRET')
+    refresh_token = os.environ.get('GCP_REFRESH_TOKEN')
     
-    creds_dict = json.loads(creds_json)
-    credentials = service_account.Credentials.from_service_account_info(
-        creds_dict, scopes=['https://www.googleapis.com/auth/drive']
+    if not all([client_id, client_secret, refresh_token]):
+        raise ValueError("環境変数(GCP_CLIENT_ID, GCP_CLIENT_SECRET, GCP_REFRESH_TOKEN)が設定されていません。")
+    
+    creds = Credentials(
+        token=None,
+        refresh_token=refresh_token,
+        token_uri='https://oauth2.googleapis.com/token',
+        client_id=client_id,
+        client_secret=client_secret
     )
-    return build('drive', 'v3', credentials=credentials)
+    return build('drive', 'v3', credentials=creds)
 
 def upload_to_gdrive(local_dir: pathlib.Path, folder_id: str):
     print("\nGoogle Driveへ接続しています...")
@@ -246,7 +252,7 @@ def upload_to_gdrive(local_dir: pathlib.Path, folder_id: str):
     return today_str
 
 # ──────────────────────────────────
-# 5. 追加機能：メール通知（環境変数対応）
+# 5. 追加機能：メール通知
 # ──────────────────────────────────
 def send_completion_email(folder_name: str, file_count: int):
     sender_email = os.environ.get('GMAIL_ADDRESS')
